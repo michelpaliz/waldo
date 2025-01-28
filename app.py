@@ -1,10 +1,9 @@
 import streamlit as st
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from PIL import Image
 
-st.title("🔍 Template Matching: Find Waldo!")
+st.title("🔍 Template Matching: Find Waldo (Detect Multiple Instances)")
 
 # Upload the full scene
 source_file = st.file_uploader("📸 Upload Full Scene Image", type=["png", "jpg", "jpeg"])
@@ -36,16 +35,18 @@ if source_file and template_file:
 
     # Perform template matching
     result = cv2.matchTemplate(source_gray, template_gray, cv2.TM_CCOEFF_NORMED)
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
 
-    # Get bounding box
-    top_left = max_loc
-    h, w = template_gray.shape[:2]
-    bottom_right = (top_left[0] + w, top_left[1] + h)
+    # Define a similarity threshold (adjust as needed)
+    threshold = 0.8  # Matches with similarity above this value will be detected
+    y_locs, x_locs = np.where(result >= threshold)  # Find all positions above the threshold
 
-    # Draw rectangle
+    # Draw rectangles around all detected matches
     matched_img = source_img_cv.copy()
-    cv2.rectangle(matched_img, top_left, bottom_right, (0, 255, 0), 3)
+    h, w = template_gray.shape[:2]
+    for (x, y) in zip(x_locs, y_locs):
+        top_left = (x, y)
+        bottom_right = (x + w, y + h)
+        cv2.rectangle(matched_img, top_left, bottom_right, (0, 255, 0), 3)  # Green rectangles
 
     # Display results
-    st.image(matched_img, caption="✅ Detected Object (Green Box)", use_column_width=True)
+    st.image(matched_img, caption="✅ Detected Objects (Green Boxes)", use_column_width=True)
